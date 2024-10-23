@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\PdfController;
 use Illuminate\Http\Request;
+//use PDF;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,3 +22,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('games', GameController::class);
+Route::get('generate-pdf', [PdfController::class, 'generatePDF']);

@@ -7,37 +7,75 @@ use Illuminate\Http\Request;
 
 class GameController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        $games = Game::select('title as Título', 'genre as Género', 'developer as Desarrollador',
-        'publisher as Editor', 'release_date as Fecha de Salida')->orderBy('release_date')->get();
-        return response()->json(['status' => 'success', 'data' => $games]);
+        //$games = Game::select('title as Título', 'genre as Género', 'developer as Desarrollador',
+        //'publisher as Editor', 'release_date as Fecha de Salida')->orderBy('release_date')->get();
+        //return response()->json(['status' => 'success', 'data' => $games]);
+        $games = Game::all();
+        return view('dashboard', compact('games'));
     }
 
     public function store(Request $request)
     {
         try {
-            $Game = Game::create($request->all());
+            $game = Game::create($request->all());
             return response()->json(['status' => 'success',
-            'message' => 'Registro creado exitosamente.', 'data' => $Game]);
-            //$Game = new Game();
-            //$Game->cif = $request->cif;
-            //$Game->first_name = $request->first_name;
-            //$Game->last_name = $request->last_name;
-            //$Game->email = $request->email;
-            //$Game->career = $request->career;
-            //$Game->grade = $request->grade;
+            'message' => 'Registro creado exitosamente.', 'data' => $game]);
         } catch(\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'No se pudo crear el registro.']);
         }
     }
 
-    public function show(string $id)
+    public function show(string $value)
     {
         try {
-            $Game = Game::findOrFail($id);
+            $game = Game::where('id', $value)->orWhere('title', $value)->orWhere('developer', $value)->firstOrFail();
             return response()->json(['status' => 'success',
-            'message' => 'Se está mostrando el registro', 'data' => $Game]);
+            'message' => 'Se está mostrando el registro.', 'data' => $game]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function edit(Game $game)
+    {
+        $this->authorize('update', $game);
+        return view('games.edit', compact('game'));
+    }
+
+    public function update(Request $request, string $id)
+    {
+        try {
+            $game = Game::findOrFail($id);
+
+            if ($request->user()->cannot('update', $game)) {
+                abort(403); 
+            }
+
+            $game->update($request->all());
+            //return response()->json(['status' => 'success', 'message' => 'Producto actualizado exitosamente.',
+            //'data' => $game]);
+            return redirect()->route('dashboard')->with('success', 'Game updated successfully');
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function destroy(Game $game)
+    {
+        $this->authorize('delete', $game);
+
+        try {
+            $game->delete();
+            //return response()->json(['status' => 'success', 'message' => 'Producto eliminado exitosamente.',
+            //'data' => $game]);
+            return redirect()->route('dashboard')->with('success', 'Game deleted successfully');
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
